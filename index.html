@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cart Brand | نظام المبيعات</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#0f1830; --line:#1b2a52; --accent:#3b82f6;
+    --txt:#e8f0ff; --muted:#9fb2d8; --ok:#16a34a; --warn:#eab308; --info:#0284c7; --off:#64748b; --bad:#dc2626;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans Arabic",Tahoma,Arial}
+  header{position:sticky;top:0;background:linear-gradient(90deg,#0f1e3d,#0d1730);border-bottom:1px solid var(--line);z-index:5}
+  .bar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
+  .brand{font-weight:800}
+  .wrap{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 56px)}
+  nav{background:var(--panel);border-inline-end:1px solid var(--line);padding:12px;position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto}
+  nav .item{display:block;background:#0b1530;border:1px solid var(--line);color:var(--muted);padding:10px 12px;border-radius:10px;margin-bottom:8px;text-decoration:none;cursor:pointer}
+  nav .item.active{background:#102657;color:#fff;border-color:#2a4ea4}
+  main{padding:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+  .col-2{grid-column:span 2} .col-3{grid-column:span 3} .col-4{grid-column:span 4} .col-6{grid-column:span 6} .col-12{grid-column:span 12}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr} nav{position:static;height:auto} .grid{grid-template-columns:repeat(6,1fr)} .col-2{grid-column:span 3} .col-3{grid-column:span 3}.col-4{grid-column:span 6}.col-6{grid-column:span 6}.col-12{grid-column:span 6}}
+  .kpi{background:#0e1a39;border:1px solid var(--line);border-radius:12px;padding:12px}
+  .kpi .label{color:var(--muted);font-size:12px}
+  .kpi .val{font-size:22px;font-weight:800;margin-top:6px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  input,select,button,textarea{font-size:14px}
+  input,select,textarea{width:100%;background:#0a1430;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px}
+  button{background:var(--accent);border:0;color:white;padding:10px 14px;border-radius:10px;cursor:pointer}
+  button.alt{background:#19305f}
+  table{width:100%;border-collapse:collapse}
+  th,td{border-bottom:1px solid var(--line);padding:10px;text-align:center}
+  th{position:sticky;top:0;background:#0f1f46}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .muted{color:var(--muted)}
+  .hint{font-size:12px;color:#9fb2d8}
+  .status-chip{padding:4px 8px;border-radius:999px;font-size:12px;display:inline-block}
+  .s-prep{background:rgba(234,179,8,.15);color:#fde047;border:1px solid #eab308}
+  .s-ready{background:rgba(22,163,74,.15);color:#86efac;border:1px solid #16a34a}
+  .s-deliv{background:rgba(2,132,199,.15);color:#93c5fd;border:1px solid #0284c7}
+  .s-closed{background:rgba(100,116,139,.15);color:#cbd5e1;border:1px solid #64748b}
+  .s-swap{background:rgba(220,38,38,.15);color:#fecaca;border:1px solid #dc2626}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">Cart Brand | نظام المبيعات</div>
+    <div class="muted">واجهة زرقا، منظمة، بدون فوضى.</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav id="nav">
+    <a class="item active" data-tab="dash">لوحة التحكم</a>
+    <a class="item" data-tab="orders">الطلبات</a>
+    <a class="item" data-tab="suppliers">الموردون</a>
+    <a class="item" data-tab="products">أسعار الموديلات</a>
+  </nav>
+
+  <main>
+    <!-- Dashboard -->
+    <section id="tab-dash" class="card">
+      <div class="grid">
+        <div class="col-3 kpi"><div class="label">إجمالي المبيعات</div><div class="val" id="k-total-sales">0</div></div>
+        <div class="col-3 kpi"><div class="label">إجمالي التكلفة (تقديري)</div><div class="val" id="k-total-cogs">0</div></div>
+        <div class="col-3 kpi"><div class="label">الربح الإجمالي</div><div class="val" id="k-gross">0</div></div>
+        <div class="col-3 kpi"><div class="label">متوسط الهامش</div><div class="val" id="k-margin">0%</div></div>
+
+        <div class="col-12"></div>
+        <div class="col-3 kpi"><div class="label">قيد التجهيز</div><div class="val" id="k-prep">0</div></div>
+        <div class="col-3 kpi"><div class="label">جاهز</div><div class="val" id="k-ready">0</div></div>
+        <div class="col-3 kpi"><div class="label">قيد التوصيل</div><div class="val" id="k-deliv">0</div></div>
+        <div class="col-3 kpi"><div class="label">مغلق/تبديل</div><div class="val" id="k-other">0</div></div>
+      </div>
+    </section>
+
+    <!-- Orders -->
+    <section id="tab-orders" class="card" hidden>
+      <div class="row">
+        <div class="hint">أدخل طلب جديد. كل الحقول مهمة عشان التتبع يكون نظيف.</div>
+      </div>
+      <div class="grid">
+        <div class="col-3"><label>رقم الموديل</label><input id="o-model" placeholder="CB-101" class="mono"></div>
+        <div class="col-2"><label>المقاس</label><input id="o-size" type="number" min="20" max="50" step="1"></div>
+        <div class="col-2"><label>اللون</label><input id="o-color" placeholder="أسود"></div>
+        <div class="col-2"><label>الكمية</label><input id="o-qty" type="number" min="1" step="1" value="1"></div>
+        <div class="col-3"><label>سعر البيع للوحدة</label><input id="o-price" type="number" min="0" step="0.01"></div>
+
+        <div class="col-4"><label>اسم الزبون</label><input id="o-customer" placeholder="اسم الزبون"></div>
+        <div class="col-4"><label>رقم الهاتف</label><input id="o-phone" placeholder="05xxxxxxxx"></div>
+        <div class="col-4"><label>العنوان</label><input id="o-address" placeholder="المدينة - الشارع - ملاحظة"></div>
+
+        <div class="col-3"><label>الحالة</label>
+          <select id="o-status">
+            <option>قيد التجهيز</option><option>جاهز</option><option>قيد التوصيل</option><option>مغلق</option><option>تبديل</option>
+          </select>
+        </div>
+        <div class="col-3" style="display:flex;align-items:end"><button id="o-add">إضافة الطلب</button></div>
+        <div class="col-6" style="display:flex;align-items:end;gap:8px">
+          <input id="o-search" placeholder="بحث: موديل / زبون / هاتف / عنوان" />
+          <button class="alt" id="o-export">تصدير CSV</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="row"><div class="hint">سجل الطلبات</div></div>
+        <div style="max-height:460px;overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>التاريخ</th><th>الموديل</th><th>المقاس</th><th>اللون</th>
+                <th>الكمية</th><th>السعر</th><th>الزبون</th><th>الهاتف</th><th>العنوان</th><th>الحالة</th>
+              </tr>
+            </thead>
+            <tbody id="t-orders"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Suppliers -->
+    <section id="tab-suppliers" class="card" hidden>
+      <div class="grid">
+        <div class="col-4"><label>اسم المورد</label><input id="s-name" placeholder="أبو محمد للأحذية"></div>
+        <div class="col-4"><label>الهاتف</label><input id="s-phone" placeholder="05xxxxxxxx"></div>
+        <div class="col-4" style="display:flex;align-items:end"><button id="s-add">إضافة مورد</button></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="hint">قائمة الموردين وحسابهم</div>
+        <div style="max-height:360px;overflow:auto">
+          <table>
+            <thead><tr><th>المورد</th><th>الهاتف</th><th>إجمالي المشتريات</th><th>المدفوع</th><th>الرصيد المتبقي</th><th>رابط صفحة المورد</th></tr></thead>
+            <tbody id="t-suppliers"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="hint">طلب جوز من مورد</div>
+        <div class="grid">
+          <div class="col-3"><label>المورد</label><select id="sr-supplier"></select></div>
+          <div class="col-3"><label>رقم الموديل</label><input id="sr-model" class="mono" placeholder="CB-101"></div>
+          <div class="col-2"><label>المقاس</label><input id="sr-size" type="number" min="20" max="50" step="1"></div>
+          <div class="col-2"><label>اللون</label><input id="sr-color" placeholder="أسود"></div>
+          <div class="col-2"><label>العدد</label><input id="sr-qty" type="number" min="1" step="1" value="1"></div>
+          <div class="col-3" style="display:flex;align-items:end"><button id="sr-send">إرسال الطلب للمورد</button></div>
+        </div>
+        <div class="hint">المورد رح يشوف الطلب فوراً في صفحته العامة (بدون Push حالياً).</div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="hint">تسجيل شراء من مورد (يزيد الرصيد عليك)</div>
+        <div class="grid">
+          <div class="col-3"><label>المورد</label><select id="pu-supplier"></select></div>
+          <div class="col-3"><label>رقم الموديل</label><input id="pu-model" class="mono" placeholder="CB-101"></div>
+          <div class="col-2"><label>المقاس</label><input id="pu-size" type="number" min="20" max="50" step="1"></div>
+          <div class="col-2"><label>اللون</label><input id="pu-color" placeholder="أسود"></div>
+          <div class="col-2"><label>الكمية</label><input id="pu-qty" type="number" min="1" step="1" value="1"></div>
+          <div class="col-2"><label>سعر الجملة للوحدة</label><input id="pu-cost" type="number" min="0" step="0.01" placeholder="مثال 90"></div>
+          <div class="col-3" style="display:flex;align-items:end"><button id="pu-add">تسجيل شراء</button></div>
+        </div>
+        <div class="hint">نقرأ سعر الجملة تلقائياً من تبويب "أسعار الموديلات" لو موجود.</div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="hint">تسجيل دفعة لمورد (تنقص الرصيد)</div>
+        <div class="grid">
+          <div class="col-3"><label>المورد</label><select id="pa-supplier"></select></div>
+          <div class="col-3"><label>المبلغ</label><input id="pa-amount" type="number" min="0" step="0.01"></div>
+          <div class="col-6"><label>ملاحظات</label><input id="pa-notes" placeholder="تحويل/نقد..."></div>
+          <div class="col-3" style="display:flex;align-items:end"><button id="pa-add">تسجيل دفعة</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Products (Wholesale prices) -->
+    <section id="tab-products" class="card" hidden>
+      <div class="grid">
+        <div class="col-4"><label>رقم الموديل</label><input id="pr-model" class="mono" placeholder="CB-101"></div>
+        <div class="col-4"><label>سعر الجملة</label><input id="pr-cost" type="number" min="0" step="0.01"></div>
+        <div class="col-4" style="display:flex;align-items:end;gap:8px">
+          <button id="pr-find">عرض السعر</button>
+          <button class="alt" id="pr-save">حفظ/تحديث</button>
+        </div>
+      </div>
+      <div class="hint">السعر يتخزن في مجموعة <span class="mono">products</span> ويستخدم تلقائياً عند تسجيل مشتريات.</div>
+    </section>
+
+    <!-- Public supplier view -->
+    <section id="tab-public" class="card" hidden>
+      <div class="grid">
+        <div class="col-6 kpi"><div class="label">اسم المورد</div><div class="val" id="pub-name">—</div></div>
+        <div class="col-6 kpi"><div class="label">الهاتف</div><div class="val" id="pub-phone">—</div></div>
+        <div class="col-12"></div>
+        <div class="col-12"><div class="hint">طلباتك الأخيرة</div></div>
+      </div>
+      <div style="max-height:480px;overflow:auto;margin-top:8px">
+        <table>
+          <thead><tr><th>التاريخ</th><th>الموديل</th><th>المقاس</th><th>اللون</th><th>العدد</th></tr></thead>
+          <tbody id="t-pub-reqs"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Firebase + logic -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, setDoc, getDoc, doc, onSnapshot, updateDoc, serverTimestamp, query, where } 
+    from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB8UdVOTqPmHPmiokEZ45JhXIU2mR0SE_8",
+    authDomain: "cart-brand-app.firebaseapp.com",
+    projectId: "cart-brand-app",
+    storageBucket: "cart-brand-app.firebasestorage.app",
+    messagingSenderId: "743299975523",
+    appId: "1:743299975523:web:a95880aad3311744606b56",
+    measurementId: "G-MG9WBG5YT0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Collections
+  const ORDERS = collection(db, "orders");
+  const SUPPLIERS = collection(db, "suppliers");
+  const SUPPLIER_REQS = collection(db, "supplier_requests");
+  const PURCHASES = collection(db, "purchases");
+  const PAYMENTS = collection(db, "payments");
+  const PRODUCTS = (m)=> doc(db, "products", m); // use model as doc id
+
+  // Tabs
+  const tabs = document.querySelectorAll('nav .item');
+  tabs.forEach(btn=>btn.addEventListener('click',()=>{
+    tabs.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+    document.querySelectorAll('main section').forEach(s=>s.hidden=true);
+    document.getElementById('tab-'+btn.dataset.tab).hidden=false;
+  }));
+
+  // Helpers
+  const cur = "₪";
+  const fmt = n => (isNaN(+n)?0:+n).toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2})+" "+cur;
+  const fmt0 = n => (isNaN(+n)?0:+n).toLocaleString('ar-EG');
+  function statusChip(s){
+    const map={ "قيد التجهيز":"s-prep","جاهز":"s-ready","قيد التوصيل":"s-deliv","مغلق":"s-closed","تبديل":"s-swap"};
+    return `<span class="status-chip ${map[s]||'s-closed'}">${s}</span>`;
+  }
+  function bySearch(o,term){
+    if(!term) return true;
+    term = term.toLowerCase();
+    return [o.model,o.customer,o.phone,o.address].some(v=>String(v||'').toLowerCase().includes(term));
+  }
+
+  // ---------------- Orders ----------------
+  document.getElementById('o-add').addEventListener('click', async ()=>{
+    const model = document.getElementById('o-model').value.trim();
+    const size = +document.getElementById('o-size').value || 0;
+    const color = document.getElementById('o-color').value.trim();
+    const qty = +document.getElementById('o-qty').value || 0;
+    const price = +document.getElementById('o-price').value || 0;
+    const customer = document.getElementById('o-customer').value.trim();
+    const phone = document.getElementById('o-phone').value.trim();
+    const address = document.getElementById('o-address').value.trim();
+    const status = document.getElementById('o-status').value;
+    if(!model || !size || !color || qty<=0 || price<0 || !customer || !phone || !address){ alert("عبي كل الحقول"); return; }
+    await addDoc(ORDERS, { model, size, color, qty, price, customer, phone, address, status, ts: serverTimestamp() });
+    ['o-model','o-size','o-color','o-qty','o-price','o-customer','o-phone','o-address'].forEach(id=>document.getElementById(id).value="");
+    document.getElementById('o-qty').value=1; document.getElementById('o-status').value="قيد التجهيز";
+  });
+
+  // live orders + KPIs and filter + export
+  let ordersCache = [];
+  onSnapshot(ORDERS, snap=>{
+    ordersCache = [];
+    snap.forEach(d=>{ ordersCache.push({ id:d.id, ...d.data() }); });
+    renderOrders();
+    refreshKPIs();
+  });
+  document.getElementById('o-search').addEventListener('input', renderOrders);
+  function renderOrders(){
+    const tbody = document.getElementById('t-orders'); tbody.innerHTML="";
+    const term = document.getElementById('o-search').value.trim();
+    ordersCache
+      .filter(o=>bySearch(o,term))
+      .sort((a,b)=> (b.ts?.seconds||0) - (a.ts?.seconds||0))
+      .forEach(o=>{
+        const tr = document.createElement('tr');
+        const dateStr = o.ts?.seconds ? new Date(o.ts.seconds*1000).toLocaleString('ar-EG') : '';
+        tr.innerHTML = `
+          <td>${dateStr}</td>
+          <td class="mono">${o.model}</td>
+          <td>${o.size}</td>
+          <td>${o.color}</td>
+          <td>${o.qty}</td>
+          <td>${fmt(o.price)}</td>
+          <td>${o.customer}</td>
+          <td>${o.phone}</td>
+          <td>${o.address}</td>
+          <td>
+            <select data-id="${o.id}" class="st-dd">
+              <option ${o.status==="قيد التجهيز"?"selected":""}>قيد التجهيز</option>
+              <option ${o.status==="جاهز"?"selected":""}>جاهز</option>
+              <option ${o.status==="قيد التوصيل"?"selected":""}>قيد التوصيل</option>
+              <option ${o.status==="مغلق"?"selected":""}>مغلق</option>
+              <option ${o.status==="تبديل"?"selected":""}>تبديل</option>
+            </select>
+            <div style="margin-top:6px">${statusChip(o.status||"")}</div>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    document.querySelectorAll('.st-dd').forEach(sel=>{
+      sel.onchange = async ()=>{ await updateDoc(doc(db,'orders', sel.dataset.id), { status: sel.value }); };
+    });
+  }
+  document.getElementById('o-export').addEventListener('click', ()=>{
+    const header = ["date","model","size","color","qty","price","customer","phone","address","status"];
+    const rows = ordersCache.map(o=>[
+      (o.ts?.seconds? new Date(o.ts.seconds*1000).toISOString():""),
+      o.model,o.size,o.color,o.qty,o.price,o.customer,o.phone,('"'+(o.address||'').replace('"','""')+'"'),o.status
+    ]);
+    const csv = [header.join(","), *rows.map(r=>r.join(","))].join("\n");
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download = 'orders.csv'; a.click();
+  });
+
+  // KPIs incl. COGS using avg cost per model from purchases
+  let purchasesCache = [];
+  onSnapshot(PURCHASES, snap=>{ purchasesCache = []; snap.forEach(d=>purchasesCache.push(d.data())); refreshKPIs(); });
+  function avgCostByModel(){
+    const map = new Map();
+    purchasesCache.forEach(p=>{
+      const key = p.model;
+      const qty = +p.qty||0, cost = +p.cost||0;
+      if(!map.has(key)) map.set(key,{qty:0,cost:0});
+      const a = map.get(key); a.qty += qty; a.cost += qty*cost;
+    });
+    const out = Object.create(null);
+    map.forEach((v,k)=> out[k] = v.qty>0 ? v.cost/v.qty : 0);
+    return out;
+  }
+  function refreshKPIs(){
+    // counts by status
+    const cnt = {prep:0, ready:0, deliv:0, other:0};
+    let totalSales=0, totalCOGS=0;
+    const costMap = avgCostByModel();
+    ordersCache.forEach(o=>{
+      const sale = (+o.qty||0) * (+o.price||0);
+      const unitCost = costMap[o.model]||0;
+      totalSales += sale;
+      totalCOGS += (+o.qty||0) * unitCost;
+      if(o.status==="قيد التجهيز") cnt.prep++; else if(o.status==="جاهز") cnt.ready++; else if(o.status==="قيد التوصيل") cnt.deliv++; else cnt.other++;
+    });
+    const gross = totalSales - totalCOGS;
+    const margin = totalSales>0 ? (gross/totalSales)*100 : 0;
+    document.getElementById('k-total-sales').textContent = fmt(totalSales);
+    document.getElementById('k-total-cogs').textContent = fmt(totalCOGS);
+    document.getElementById('k-gross').textContent = fmt(gross);
+    document.getElementById('k-margin').textContent = margin.toFixed(1)+"%";
+    document.getElementById('k-prep').textContent = fmt0(cnt.prep);
+    document.getElementById('k-ready').textContent = fmt0(cnt.ready);
+    document.getElementById('k-deliv').textContent = fmt0(cnt.deliv);
+    document.getElementById('k-other').textContent = fmt0(cnt.other);
+  }
+
+  // ---------------- Suppliers + balances ----------------
+  function supplierLink(id){
+    const base = location.origin + location.pathname;
+    return `${base}?view=public&supplier=${id}`;
+  }
+  function fillSupplierSelects(options){
+    ['sr-supplier','pu-supplier','pa-supplier'].forEach(id=>{
+      const sel = document.getElementById(id); sel.innerHTML="";
+      options.forEach(o=>{ const opt=document.createElement('option'); opt.value=o.id; opt.textContent=o.name; sel.appendChild(opt); });
+    });
+  }
+
+  document.getElementById('s-add').addEventListener('click', async ()=>{
+    const name = document.getElementById('s-name').value.trim();
+    const phone = document.getElementById('s-phone').value.trim();
+    if(!name) return alert("اكتب اسم المورد");
+    await addDoc(SUPPLIERS, { name, phone, ts: serverTimestamp() });
+    document.getElementById('s-name').value=''; document.getElementById('s-phone').value='';
+  });
+
+  // products price fetch helper
+  async function getProductCost(model){
+    if(!model) return 0;
+    const ref = PRODUCTS(model);
+    const snap = await getDoc(ref);
+    return snap.exists() ? (+snap.data().cost||0) : 0;
+  }
+
+  // purchases: add
+  document.getElementById('pu-add').addEventListener('click', async ()=>{
+    const supplierId = document.getElementById('pu-supplier').value;
+    const model = document.getElementById('pu-model').value.trim();
+    const size = +document.getElementById('pu-size').value || 0;
+    const color = document.getElementById('pu-color').value.trim();
+    const qty = +document.getElementById('pu-qty').value || 0;
+    let cost = +document.getElementById('pu-cost').value || 0;
+    if(!supplierId || !model || !size || !color || qty<=0) return alert("عبّي كل الحقول");
+    if(cost<=0) cost = await getProductCost(model);
+    await addDoc(PURCHASES, { supplierId, model, size, color, qty, cost, ts: serverTimestamp() });
+    ['pu-model','pu-size','pu-color'].forEach(id=>document.getElementById(id).value=""); document.getElementById('pu-qty').value=1; document.getElementById('pu-cost').value="";
+    alert("تم تسجيل الشراء.");
+  });
+
+  // payments: add
+  document.getElementById('pa-add').addEventListener('click', async ()=>{
+    const supplierId = document.getElementById('pa-supplier').value;
+    const amount = +document.getElementById('pa-amount').value || 0;
+    const notes = document.getElementById('pa-notes').value.trim();
+    if(!supplierId || amount<=0) return alert("عبّي اسم المورد والمبلغ");
+    await addDoc(PAYMENTS, { supplierId, amount, notes, ts: serverTimestamp() });
+    document.getElementById('pa-amount').value=""; document.getElementById('pa-notes').value="";
+    alert("تم تسجيل الدفعة.");
+  });
+
+  // supplier requests: send
+  document.getElementById('sr-send').addEventListener('click', async ()=>{
+    const supplierId = document.getElementById('sr-supplier').value;
+    const model = document.getElementById('sr-model').value.trim();
+    const size = +document.getElementById('sr-size').value || 0;
+    const color = document.getElementById('sr-color').value.trim();
+    const qty = +document.getElementById('sr-qty').value || 0;
+    if(!supplierId || !model || !size || !color || qty<=0) return alert("عبّي كل الحقول");
+    await addDoc(SUPPLIER_REQS, { supplierId, model, size, color, qty, ts: serverTimestamp() });
+    ['sr-model','sr-size','sr-color'].forEach(id=>document.getElementById(id).value=""); document.getElementById('sr-qty').value=1;
+    alert("تم إرسال الطلب للمورد.");
+  });
+
+  // live suppliers list + balances and selects
+  let suppliersCache = [];
+  let paymentsCache = [];
+  onSnapshot(SUPPLIERS, snap=>{ suppliersCache=[]; snap.forEach(d=>suppliersCache.push({id:d.id, ...d.data()})); renderSuppliers(); fillSupplierSelects(suppliersCache); });
+  onSnapshot(PURCHASES, snap=>{ renderSuppliers(); });
+  onSnapshot(PAYMENTS, snap=>{ paymentsCache=[]; snap.forEach(d=>paymentsCache.push(d.data())); renderSuppliers(); });
+
+  function supplierTotals(id){
+    const pur = []; const pay = [];
+    // gather
+    purchasesCache.forEach(p=>{ if(p.supplierId===id) pur.push(p); });
+    paymentsCache.forEach(p=>{ if(p.supplierId===id) pay.push(p); });
+    const totalPurch = pur.reduce((a,b)=> a + ((+b.qty||0)*(+b.cost||0)), 0);
+    const totalPays = pay.reduce((a,b)=> a + (+b.amount||0), 0);
+    return {totalPurch, totalPays, balance: totalPurch - totalPays};
+  }
+  function renderSuppliers(){
+    const tbody = document.getElementById('t-suppliers'); if(!tbody) return;
+    tbody.innerHTML="";
+    suppliersCache.forEach(s=>{
+      const t = supplierTotals(s.id);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${s.name}</td>
+        <td>${s.phone||'—'}</td>
+        <td>${fmt(t.totalPurch)}</td>
+        <td>${fmt(t.totalPays)}</td>
+        <td>${fmt(t.balance)}</td>
+        <td><input value="${supplierLink(s.id)}" class="mono" style="width:100%" readonly></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ---------------- Products (wholesale price) ----------------
+  document.getElementById('pr-find').addEventListener('click', async ()=>{
+    const m = document.getElementById('pr-model').value.trim();
+    if(!m) return alert("اكتب رقم الموديل");
+    const snap = await getDoc(PRODUCTS(m));
+    document.getElementById('pr-cost').value = snap.exists()? (+snap.data().cost||0) : "";
+    if(!snap.exists()) alert("ما في سعر مخزن لهذا الموديل. احفظه من زر تحديث.");
+  });
+  document.getElementById('pr-save').addEventListener('click', async ()=>{
+    const m = document.getElementById('pr-model').value.trim();
+    const c = +document.getElementById('pr-cost').value || 0;
+    if(!m || c<=0) return alert("اكتب الموديل والسعر");
+    await setDoc(PRODUCTS(m), { model:m, cost:c, ts: serverTimestamp() });
+    alert("تم حفظ/تحديث سعر الجملة للموديل.");
+  });
+
+  // ---------------- Public supplier page ----------------
+  function publicView(){
+    const params = new URLSearchParams(location.search);
+    const view = params.get('view'); const supplierId = params.get('supplier');
+    if(view!=='public' || !supplierId) return;
+    // hide app chrome
+    document.querySelector('nav').hidden = true;
+    document.querySelectorAll('main section').forEach(s=>s.hidden=true);
+    document.getElementById('tab-public').hidden=false;
+
+    onSnapshot(doc(db,'suppliers',supplierId), snap=>{
+      const s = snap.data(); if(!s) return;
+      document.getElementById('pub-name').textContent = s.name;
+      document.getElementById('pub-phone').textContent = s.phone||'—';
+    });
+    const qy = query(SUPPLIER_REQS, where('supplierId','==',supplierId));
+    onSnapshot(qy, snap=>{
+      const tbody = document.getElementById('t-pub-reqs'); tbody.innerHTML="";
+      snap.forEach(d=>{ const r=d.data(); const dateStr = r.ts?.seconds ? new Date(r.ts.seconds*1000).toLocaleString('ar-EG') : '';
+        const tr=document.createElement('tr'); tr.innerHTML = `<td>${dateStr}</td><td class="mono">${r.model}</td><td>${r.size}</td><td>${r.color}</td><td>${r.qty}</td>`; tbody.appendChild(tr); });
+    });
+  }
+  publicView();
+</script>
+</body>
+</html>
